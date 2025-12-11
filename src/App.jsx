@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { supabase } from './lib/supabase'
 import AdminDashboard from './components/AdminDashboard'
 import MainPage from './components/MainPage'
 import ProductPage from './components/ProductPage'
@@ -31,6 +32,27 @@ function NavigationButton() {
 }
 
 function App() {
+  if (!supabase) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        fontFamily: 'sans-serif',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ color: '#ef4444' }}>Configuration Error</h1>
+        <p>Supabase environment variables are missing.</p>
+        <p style={{ color: '#666', marginTop: '10px' }}>
+          Please make sure <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> are set in your environment.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <Router>
       <div className="app">
