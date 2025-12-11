@@ -7,6 +7,8 @@ function ProductManager() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
+  const [uploading, setUploading] = useState(false)
+
   // Form State
   const [formData, setFormData] = useState({
     title: '',
@@ -15,7 +17,7 @@ function ProductManager() {
     category: '',
     stock: '',
     theme_color: '#000000',
-    images: '', // string input, split by comma
+    images: [], // array of strings
     colors: '', // string input, split by comma
     sizes: ''   // string input, split by comma
   })
@@ -49,6 +51,54 @@ function ProductManager() {
     }))
   }
 
+  const handleImageUpload = async (e) => {
+    try {
+      setUploading(true)
+      const files = e.target.files
+      if (!files || files.length === 0) return
+
+      const newImages = []
+      
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file)
+
+        if (uploadError) {
+          throw uploadError
+        }
+
+        const { data } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath)
+          
+        newImages.push(data.publicUrl)
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...newImages]
+      }))
+      
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert('Error uploading image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
@@ -61,7 +111,7 @@ function ProductManager() {
         category: formData.category,
         stock: parseInt(formData.stock) || 0,
         theme_color: formData.theme_color,
-        images: formData.images.split(',').map(s => s.trim()).filter(Boolean),
+        images: formData.images,
         colors: formData.colors.split(',').map(s => s.trim()).filter(Boolean),
         sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean)
       }
@@ -121,7 +171,7 @@ function ProductManager() {
       category: product.category || '',
       stock: product.stock || 0,
       theme_color: product.theme_color || '#000000',
-      images: (product.images || []).join(', '),
+      images: product.images || [],
       colors: (product.colors || []).join(', '),
       sizes: (product.sizes || []).join(', ')
     })
@@ -137,7 +187,7 @@ function ProductManager() {
       category: '',
       stock: '',
       theme_color: '#000000',
-      images: '',
+      images: [],
       colors: '',
       sizes: ''
     })
@@ -246,14 +296,50 @@ function ProductManager() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Images (comma separated URLs)</label>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Images</label>
+                
+                {/* Image List */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  {formData.images.map((img, index) => (
+                    <div key={index} style={{ position: 'relative', width: '80px', height: '80px', border: '1px solid #ddd' }}>
+                      <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        style={{
+                          position: 'absolute', top: '-5px', right: '-5px',
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          backgroundColor: 'red', color: 'white', border: 'none',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {uploading && (
+                    <div style={{ 
+                      width: '80px', height: '80px', border: '1px dashed #ddd', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', color: '#666'
+                    }}>
+                      Uploading...
+                    </div>
+                  )}
+                </div>
+
                 <input 
-                  name="images" 
-                  value={formData.images} 
-                  onChange={handleInputChange} 
-                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                  type="file" 
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
                   style={{ width: '100%', padding: '8px', border: '1px solid #ddd' }}
                 />
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                  Select multiple files to upload.
+                </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
