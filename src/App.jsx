@@ -6,6 +6,7 @@ import AdminDashboard from './components/AdminDashboard'
 import MainPage from './components/MainPage'
 import ProductPage from './components/ProductPage'
 import CartDrawer from './components/CartDrawer'
+import CheckoutPage from './components/CheckoutPage'
 
 function NavigationButton() {
   const navigate = useNavigate()
@@ -61,6 +62,7 @@ function App() {
         <div className="app">
           <Routes>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/:slug" element={<MainPage />} />
             <Route path="/" element={<MainPage />} />

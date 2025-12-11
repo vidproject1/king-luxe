@@ -29,12 +29,6 @@ const COMPONENT_VARIATIONS = {
     { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal' } },
     { name: 'Boxed', variant: 'boxed', config: { layout: 'boxed', backgroundColor: '#f5f5f5', padding: '60px' } }
   ],
-  cart: [
-    { name: 'Standard', variant: 'default', config: {} },
-    { name: 'Sidebar Style', variant: 'sidebar', config: { layout: 'sidebar' } },
-    { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal' } },
-    { name: 'Boxed', variant: 'boxed', config: { layout: 'boxed' } }
-  ],
   footer: [
     { name: 'Standard', variant: 'default', config: {} },
     { name: 'Multi Column', variant: 'columns', config: { layout: 'columns' } },

@@ -57,8 +57,6 @@ function MainPage() {
         return <ProductGridComponent config={component.config} />
       case 'contact_form':
         return <ContactFormComponent config={component.config} />
-      case 'cart':
-        return <CartComponent config={component.config} />
       case 'footer':
         return <FooterComponent config={component.config} />
       default:
@@ -480,68 +478,6 @@ function ContactFormComponent({ config }) {
               {config.submitButtonText || 'SEND MESSAGE'}
             </button>
           </form>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function CartComponent({ config }) {
-  const variant = config.variant || 'default'
-  
-  return (
-    <section style={{
-      backgroundColor: config.backgroundColor || '#ffffff',
-      padding: config.padding || '100px 20px',
-      minHeight: '60vh',
-      display: variant === 'sidebar' ? 'flex' : 'block',
-      justifyContent: 'flex-end'
-    }}>
-      <div style={{ 
-        maxWidth: variant === 'sidebar' ? '400px' : '1000px', 
-        margin: variant === 'sidebar' ? '0' : '0 auto',
-        width: '100%'
-      }}>
-        <h1 style={{
-          fontSize: '32px',
-          color: '#000000',
-          marginBottom: '60px',
-          textAlign: 'center',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>
-          {config.title || 'SHOPPING BAG'}
-        </h1>
-        
-        <div style={{
-          backgroundColor: '#ffffff',
-          padding: '60px',
-          textAlign: 'center',
-          border: '1px solid #f0f0f0'
-        }}>
-          <p style={{ 
-            fontSize: '16px', 
-            color: '#666666', 
-            marginBottom: '30px',
-            fontFamily: "'Lato', sans-serif",
-            fontWeight: '300'
-          }}>
-            {config.emptyText || 'Your shopping bag is empty.'}
-          </p>
-          <button style={{
-            marginTop: '10px',
-            padding: '14px 30px',
-            backgroundColor: '#000000',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0',
-            cursor: 'pointer',
-            fontSize: '12px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em'
-          }}>
-            CONTINUE SHOPPING
-          </button>
         </div>
       </div>
     </section>

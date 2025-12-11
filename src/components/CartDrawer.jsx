@@ -1,8 +1,15 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
 function CartDrawer() {
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, cartTotal } = useCart()
+  const navigate = useNavigate()
+
+  const handleCheckout = () => {
+    setIsCartOpen(false)
+    navigate('/checkout')
+  }
 
   if (!isCartOpen) return null
 
@@ -81,7 +88,9 @@ function CartDrawer() {
           <span>Total</span>
           <span>ZAR {cartTotal.toFixed(2)}</span>
         </div>
-        <button style={{
+        <button 
+          onClick={handleCheckout}
+          style={{
           width: '100%',
           padding: '15px',
           backgroundColor: '#000',
