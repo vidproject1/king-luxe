@@ -3,10 +3,51 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { supabase } from '../lib/supabase'
 
+const COMPONENT_VARIATIONS = {
+  navigation: [
+    { name: 'Standard', variant: 'default', config: {} },
+    { name: 'Centered', variant: 'centered', config: { layout: 'centered' } },
+    { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal' } },
+    { name: 'Dark', variant: 'dark', config: { backgroundColor: '#000000', logoColor: '#ffffff', linkColor: '#ffffff' } }
+  ],
+  hero: [
+    { name: 'Standard', variant: 'default', config: {} },
+    { name: 'Split Left', variant: 'split_left', config: { layout: 'split_left' } },
+    { name: 'Full Height', variant: 'full_height', config: { minHeight: '100vh', alignItems: 'flex-end', textAlign: 'left' } },
+    { name: 'Minimal', variant: 'minimal', config: { backgroundColor: '#ffffff', padding: '60px 20px' } }
+  ],
+  product_grid: [
+    { name: 'Grid 4-Col', variant: 'default', config: { columns: 4 } },
+    { name: 'Grid 3-Col', variant: 'grid_3', config: { columns: 3 } },
+    { name: 'Masonry', variant: 'masonry', config: { layout: 'masonry' } },
+    { name: 'Carousel', variant: 'carousel', config: { layout: 'carousel' } }
+  ],
+  contact_form: [
+    { name: 'Standard', variant: 'default', config: {} },
+    { name: 'Split Layout', variant: 'split', config: { layout: 'split' } },
+    { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal' } },
+    { name: 'Boxed', variant: 'boxed', config: { layout: 'boxed', backgroundColor: '#f5f5f5', padding: '60px' } }
+  ],
+  cart: [
+    { name: 'Standard', variant: 'default', config: {} },
+    { name: 'Sidebar Style', variant: 'sidebar', config: { layout: 'sidebar' } },
+    { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal' } },
+    { name: 'Boxed', variant: 'boxed', config: { layout: 'boxed' } }
+  ],
+  footer: [
+    { name: 'Standard', variant: 'default', config: {} },
+    { name: 'Multi Column', variant: 'columns', config: { layout: 'columns' } },
+    { name: 'Minimal', variant: 'minimal', config: { layout: 'minimal', padding: '40px 20px' } },
+    { name: 'Light', variant: 'light', config: { backgroundColor: '#f5f5f5', textColor: '#000000', brandNameColor: '#000000' } }
+  ]
+}
+
 function AdminDashboard() {
   const [components, setComponents] = useState([])
   const [pages, setPages] = useState([])
   const [currentPage, setCurrentPage] = useState(null)
+  const [selectedComponentId, setSelectedComponentId] = useState(null)
+  const [openSection, setOpenSection] = useState('navigation')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -16,6 +57,7 @@ function AdminDashboard() {
   useEffect(() => {
     if (currentPage) {
       loadPageComponents()
+      setSelectedComponentId(null)
     }
   }, [currentPage])
 
@@ -55,17 +97,27 @@ function AdminDashboard() {
         .order('position')
 
       if (error) throw error
-      setComponents(data || [])
+      
+      // Merge with default config to ensure new fields appear
+      const componentsWithDefaults = (data || []).map(comp => ({
+        ...comp,
+        config: {
+          ...getDefaultConfig(comp.type),
+          ...comp.config
+        }
+      }))
+
+      setComponents(componentsWithDefaults)
     } catch (error) {
       console.error('Error loading components:', error)
     }
   }
 
-  const addComponent = async (type) => {
+  const addComponent = async (type, variant = 'default', configOverride = {}) => {
     if (!currentPage) return
     
     try {
-      console.log('Adding component:', type)
+      console.log('Adding component:', type, variant)
       
       // Get the true next position from the database to avoid conflicts
       const { data: maxPosData, error: maxPosError } = await supabase
@@ -83,7 +135,8 @@ function AdminDashboard() {
 
       console.log('Calculated next position:', nextPosition)
 
-      const config = getDefaultConfig(type)
+      const baseConfig = getDefaultConfig(type)
+      const config = { ...baseConfig, ...configOverride, variant }
       console.log('Component config:', config)
 
       const { data, error } = await supabase
@@ -163,6 +216,9 @@ function AdminDashboard() {
       footer: {
         backgroundColor: '#000000',
         textColor: '#ffffff',
+        brandName: 'LUXURY BRAND',
+        brandNameColor: '#ffffff',
+        socialLinks: 'Instagram, Facebook, Pinterest',
         copyrightText: '© 2024 LUXURY BRAND. ALL RIGHTS RESERVED.'
       }
     }
@@ -213,8 +269,30 @@ function AdminDashboard() {
       if (error) throw error
       
       setComponents(prev => prev.filter(comp => comp.id !== componentId))
+      if (selectedComponentId === componentId) {
+        setSelectedComponentId(null)
+      }
     } catch (error) {
       console.error('Error removing component:', error)
+    }
+  }
+
+  const updateComponentConfig = async (componentId, newConfig) => {
+    // Optimistic update
+    setComponents(prev => prev.map(comp => 
+      comp.id === componentId ? { ...comp, config: newConfig } : comp
+    ))
+
+    try {
+      const { error } = await supabase
+        .from('page_components')
+        .update({ config: newConfig })
+        .eq('id', componentId)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error updating component config:', error)
+      loadPageComponents()
     }
   }
 
@@ -312,12 +390,42 @@ function AdminDashboard() {
           <div>
             <h4 style={{ marginBottom: '12px', color: '#374151' }}>Drag & Drop Components</h4>
             
-            <ComponentTool type="navigation" name="Navigation Bar" />
-            <ComponentTool type="hero" name="Hero Section" />
-            <ComponentTool type="product_grid" name="Product Grid" />
-            <ComponentTool type="contact_form" name="Contact Form" />
-            <ComponentTool type="cart" name="Shopping Cart" />
-            <ComponentTool type="footer" name="Footer" />
+            {Object.entries(COMPONENT_VARIATIONS).map(([type, variations]) => (
+              <div key={type} style={{ marginBottom: '10px' }}>
+                <div 
+                  onClick={() => setOpenSection(openSection === type ? null : type)}
+                  style={{
+                    padding: '10px',
+                    backgroundColor: openSection === type ? '#eff6ff' : '#f1f5f9',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontWeight: '500',
+                    color: '#1f2937',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  <span>{type.replace('_', ' ')}</span>
+                  <span style={{ fontSize: '10px' }}>{openSection === type ? '▼' : '▶'}</span>
+                </div>
+                
+                {openSection === type && (
+                  <div style={{ padding: '10px 0 0 10px' }}>
+                    {variations.map((variation, idx) => (
+                      <ComponentTool 
+                        key={idx}
+                        type={type} 
+                        name={variation.name} 
+                        variant={variation.variant}
+                        config={variation.config}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
           
           <div style={{ marginTop: '30px' }}>
@@ -413,22 +521,30 @@ function AdminDashboard() {
             onMoveComponent={moveComponent}
             onRemoveComponent={removeComponent}
             onAddComponent={addComponent}
+            selectedComponentId={selectedComponentId}
+            onSelectComponent={setSelectedComponentId}
           />
         </div>
+
+        {/* Property Panel */}
+        <PropertyPanel 
+          component={components.find(c => c.id === selectedComponentId)}
+          onUpdate={(newConfig) => updateComponentConfig(selectedComponentId, newConfig)}
+        />
       </div>
     </DndProvider>
   )
 }
 
 // Component Tool (Draggable item)
-function ComponentTool({ type, name }) {
+function ComponentTool({ type, name, variant, config }) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'component',
-    item: { type },
+    item: { type, variant, config },
     collect: (monitor) => ({
       isDragging: monitor.isDragging()
     })
-  }), [type])
+  }), [type, variant, config])
 
   return (
     <div
@@ -436,36 +552,36 @@ function ComponentTool({ type, name }) {
       className="component-tool"
       style={{
         opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab'
+        cursor: 'grab',
+        padding: '8px 12px',
+        backgroundColor: '#f8fafc',
+        border: '1px solid #e2e8f0',
+        borderRadius: '4px',
+        marginBottom: '8px',
+        fontSize: '13px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}
     >
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '10px' 
-      }}>
-        <span style={{ 
-          padding: '4px 8px', 
-          backgroundColor: '#eff6ff', 
-          borderRadius: '4px',
-          fontSize: '12px',
-          color: '#1d4ed8'
-        }}>
-          {type}
-        </span>
-        <span style={{ fontSize: '14px', color: '#374151' }}>{name}</span>
-      </div>
+      <div style={{
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        backgroundColor: '#3b82f6'
+      }} />
+      <span style={{ color: '#334155' }}>{name}</span>
     </div>
   )
 }
 
 // Canvas Area (Drop target)
-function CanvasArea({ components, pages, onMoveComponent, onRemoveComponent, onAddComponent }) {
+function CanvasArea({ components, pages, onMoveComponent, onRemoveComponent, onAddComponent, selectedComponentId, onSelectComponent }) {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'component',
     drop: (item) => {
       // Add the component when dropped
-      onAddComponent(item.type)
+      onAddComponent(item.type, item.variant, item.config)
       return { name: 'canvas' }
     },
     collect: (monitor) => ({
@@ -500,6 +616,8 @@ function CanvasArea({ components, pages, onMoveComponent, onRemoveComponent, onA
             index={index}
             onMove={onMoveComponent}
             onRemove={onRemoveComponent}
+            isSelected={selectedComponentId === component.id}
+            onSelect={() => onSelectComponent(component.id)}
           />
         ))
       )}
@@ -508,7 +626,7 @@ function CanvasArea({ components, pages, onMoveComponent, onRemoveComponent, onA
 }
 
 // Individual Canvas Component (Draggable and editable)
-function CanvasComponent({ component, pages, index, onMove, onRemove }) {
+function CanvasComponent({ component, pages, index, onMove, onRemove, isSelected, onSelect }) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'canvas-component',
     item: { index },
@@ -528,6 +646,8 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
   }), [index, onMove])
 
   const renderComponentPreview = () => {
+    const variant = component.config.variant || 'default'
+
     switch (component.type) {
       case 'navigation':
         return (
@@ -535,56 +655,83 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
             backgroundColor: component.config.backgroundColor || '#ffffff',
             padding: '15px',
             border: '1px solid #e2e8f0',
-            borderRadius: '6px'
+            borderRadius: '6px',
+            display: 'flex',
+            flexDirection: variant === 'centered' ? 'column' : 'row',
+            justifyContent: variant === 'minimal' ? 'space-between' : (variant === 'centered' ? 'center' : 'space-between'),
+            alignItems: 'center',
+            gap: variant === 'centered' ? '15px' : '0'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ 
-                fontSize: component.config.logoSize || '18px', 
-                fontWeight: 'bold',
-                color: component.config.logoColor || '#000000'
-              }}>
-                {component.config.logoText || 'Your Brand'}
-              </div>
-              <div style={{ display: 'flex', gap: '15px' }}>
-                {pages && pages.map(page => (
-                  <span key={page.id} style={{
-                    color: component.config.linkColor || '#374151',
-                    fontSize: component.config.linkSize || '14px'
-                  }}>
-                    {page.title}
-                  </span>
-                ))}
-              </div>
+            <div style={{ 
+              fontSize: component.config.logoSize || '18px', 
+              fontWeight: 'bold',
+              color: component.config.logoColor || '#000000'
+            }}>
+              {variant === 'minimal' ? '☰ ' : ''}{component.config.logoText || 'Your Brand'}
+            </div>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              {pages && pages.map(page => (
+                <span key={page.id} style={{
+                  color: component.config.linkColor || '#374151',
+                  fontSize: component.config.linkSize || '14px',
+                  display: variant === 'minimal' ? 'none' : 'block'
+                }}>
+                  {page.title}
+                </span>
+              ))}
             </div>
           </div>
         )
       
       case 'hero':
+        const isSplit = variant === 'split_left'
+        const isFull = variant === 'full_height'
         return (
           <div style={{
             backgroundColor: component.config.backgroundColor || '#f8fafc',
             padding: '30px',
-            textAlign: 'center',
+            textAlign: isSplit ? 'left' : (variant === 'minimal' ? 'left' : 'center'),
             border: '1px solid #e2e8f0',
-            borderRadius: '6px'
+            borderRadius: '6px',
+            display: isSplit ? 'flex' : 'block',
+            alignItems: 'center',
+            gap: '20px',
+            minHeight: isFull ? '400px' : 'auto'
           }}>
-            <h3 style={{ 
-              fontSize: '20px', 
-              color: component.config.titleColor || '#1f2937',
-              marginBottom: '10px'
-            }}>
-              {component.config.title || 'Hero Section'}
-            </h3>
-            <p style={{ 
-              color: component.config.subtitleColor || '#64748b',
-              marginBottom: '15px'
-            }}>
-              {component.config.subtitle || 'Your hero content will appear here'}
-            </p>
+            {isSplit && (
+              <div style={{ width: '50%', height: '150px', backgroundColor: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                Image
+              </div>
+            )}
+            <div style={{ flex: 1 }}>
+              <h3 style={{ 
+                fontSize: '20px', 
+                color: component.config.titleColor || '#1f2937',
+                marginBottom: '10px'
+              }}>
+                {component.config.title || 'Hero Section'}
+              </h3>
+              <p style={{ 
+                color: component.config.subtitleColor || '#64748b',
+                marginBottom: '15px'
+              }}>
+                {component.config.subtitle || 'Your hero content will appear here'}
+              </p>
+            </div>
           </div>
         )
       
       case 'product_grid':
+        let gridStyle = {
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: '10px'
+        }
+        if (variant === 'grid_3') gridStyle.gridTemplateColumns = 'repeat(3, 1fr)'
+        if (variant === 'carousel') {
+          gridStyle = { display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '10px' }
+        }
+
         return (
           <div style={{
             backgroundColor: component.config.backgroundColor || '#ffffff',
@@ -599,17 +746,15 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
             }}>
               {component.config.title || 'Product Grid'}
             </h4>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(2, 1fr)', 
-              gap: '10px' 
-            }}>
-              {[1, 2].map(item => (
+            <div style={gridStyle}>
+              {[1, 2, 3].map(item => (
                 <div key={item} style={{
                   backgroundColor: '#f1f5f9',
                   padding: '10px',
                   borderRadius: '4px',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  minWidth: variant === 'carousel' ? '120px' : 'auto',
+                  aspectRatio: variant === 'masonry' && item % 2 === 0 ? '1/1.5' : '1/1'
                 }}>
                   Product {item}
                 </div>
@@ -623,12 +768,51 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
           <div style={{
             backgroundColor: component.config.backgroundColor || '#1f2937',
             color: component.config.textColor || '#ffffff',
-            padding: '15px',
-            textAlign: 'center',
+            padding: '20px',
+            textAlign: variant === 'columns' ? 'left' : 'center',
             border: '1px solid #374151',
-            borderRadius: '6px'
+            borderRadius: '6px',
+            display: variant === 'columns' ? 'grid' : 'block',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '20px'
           }}>
-            {component.config.copyrightText || 'Footer content'}
+            <div>
+              <div style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold',
+                marginBottom: '10px',
+                color: component.config.brandNameColor || component.config.textColor || '#ffffff'
+              }}>
+                {component.config.brandName || 'LUXURY BRAND'}
+              </div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: variant === 'columns' ? 'flex-start' : 'center', 
+                gap: '10px', 
+                marginBottom: '10px',
+                fontSize: '10px',
+                opacity: 0.8,
+                flexDirection: variant === 'columns' ? 'column' : 'row'
+              }}>
+                {(component.config.socialLinks || 'Instagram, Facebook').split(',').map(s => s.trim()).join(variant === 'columns' ? '' : ' • ')}
+                {variant === 'columns' && (component.config.socialLinks || 'Instagram, Facebook').split(',').map(s => <div key={s}>{s}</div>)}
+              </div>
+            </div>
+            {variant === 'columns' && (
+               <>
+                <div>
+                   <h5 style={{marginBottom: '5px'}}>Shop</h5>
+                   <div style={{fontSize: '10px', opacity: 0.7}}>New Arrivals<br/>Best Sellers<br/>Sale</div>
+                </div>
+                <div>
+                   <h5 style={{marginBottom: '5px'}}>Support</h5>
+                   <div style={{fontSize: '10px', opacity: 0.7}}>Contact<br/>Shipping<br/>Returns</div>
+                </div>
+               </>
+            )}
+            <div style={{ fontSize: '10px', opacity: 0.6, gridColumn: variant === 'columns' ? '1 / -1' : 'auto', marginTop: variant === 'columns' ? '10px' : '0' }}>
+              {component.config.copyrightText || 'Footer content'}
+            </div>
           </div>
         )
 
@@ -640,34 +824,46 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
             border: '1px solid #e2e8f0',
             borderRadius: '6px',
             maxWidth: '600px',
-            margin: '0 auto'
+            margin: '0 auto',
+            display: variant === 'split' ? 'flex' : 'block',
+            gap: '20px'
           }}>
-            <h3 style={{ marginBottom: '20px', fontSize: component.config.titleSize || '24px' }}>
-              {component.config.title || 'Contact Us'}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input 
-                disabled 
-                placeholder={component.config.emailPlaceholder || 'Email'} 
-                style={{ padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-              />
-              <textarea 
-                disabled 
-                placeholder={component.config.messagePlaceholder || 'Message'} 
-                rows={4}
-                style={{ padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-              />
-              <button disabled style={{
-                padding: '10px 20px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'not-allowed',
-                alignSelf: 'flex-start'
-              }}>
-                {component.config.submitButtonText || 'Send'}
-              </button>
+            {variant === 'split' && (
+              <div style={{ flex: 1, borderRight: '1px solid #eee', paddingRight: '20px' }}>
+                <h3>Get in touch</h3>
+                <p>We'd love to hear from you.</p>
+              </div>
+            )}
+            <div style={{ flex: 1 }}>
+              <h3 style={{ marginBottom: '20px', fontSize: component.config.titleSize || '24px', display: variant === 'split' ? 'none' : 'block' }}>
+                {component.config.title || 'Contact Us'}
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <input 
+                  disabled 
+                  placeholder={component.config.emailPlaceholder || 'Email'} 
+                  style={{ padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                />
+                {variant !== 'minimal' && (
+                  <textarea 
+                    disabled 
+                    placeholder={component.config.messagePlaceholder || 'Message'} 
+                    rows={4}
+                    style={{ padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                )}
+                <button disabled style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'not-allowed',
+                  alignSelf: 'flex-start'
+                }}>
+                  {component.config.submitButtonText || 'Send'}
+                </button>
+              </div>
             </div>
           </div>
         )
@@ -679,7 +875,9 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
             padding: '40px',
             textAlign: 'center',
             border: '1px solid #e2e8f0',
-            borderRadius: '6px'
+            borderRadius: '6px',
+            maxWidth: variant === 'sidebar' ? '300px' : '100%',
+            marginLeft: variant === 'sidebar' ? 'auto' : '0'
           }}>
             <h2 style={{ marginBottom: '20px', color: '#1f2937' }}>
               {component.config.title || 'Shopping Cart'}
@@ -704,10 +902,17 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
   return (
     <div
       ref={(node) => drag(drop(node))}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect()
+      }}
       style={{
         opacity: isDragging ? 0.5 : 1,
         marginBottom: '15px',
-        position: 'relative'
+        position: 'relative',
+        outline: isSelected ? '2px solid #3b82f6' : 'none',
+        outlineOffset: '4px',
+        cursor: 'pointer'
       }}
     >
       {renderComponentPreview()}
@@ -755,6 +960,105 @@ function CanvasComponent({ component, pages, index, onMove, onRemove }) {
         paddingLeft: '5px'
       }}>
         {component.type} (Position: {component.position})
+      </div>
+    </div>
+  )
+}
+
+function PropertyPanel({ component, onUpdate }) {
+  if (!component) {
+    return (
+      <div style={{
+        width: '300px',
+        backgroundColor: '#ffffff',
+        borderLeft: '1px solid #e2e8f0',
+        padding: '20px',
+        color: '#64748b'
+      }}>
+        <p>Select a component to edit its properties</p>
+      </div>
+    )
+  }
+
+  const isColor = (key, value) => {
+    const keyLower = key.toLowerCase()
+    return keyLower.includes('color') || keyLower.includes('background') || (typeof value === 'string' && value.startsWith('#'))
+  }
+
+  return (
+    <div style={{
+      width: '300px',
+      backgroundColor: '#ffffff',
+      borderLeft: '1px solid #e2e8f0',
+      padding: '20px',
+      overflowY: 'auto'
+    }}>
+      <h3 style={{ 
+        marginBottom: '20px', 
+        color: '#1f2937',
+        fontSize: '18px',
+        textTransform: 'capitalize'
+      }}>
+        Edit {component.type.replace('_', ' ')}
+      </h3>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {Object.entries(component.config).map(([key, value]) => (
+          <div key={key}>
+            <label style={{
+              display: 'block', 
+              fontSize: '12px', 
+              marginBottom: '5px',
+              color: '#4b5563',
+              fontWeight: '500'
+            }}>
+              {key.replace(/([A-Z])/g, ' $1').trim()}
+            </label>
+            
+            {isColor(key, value) ? (
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="color" 
+                  value={value || '#000000'} 
+                  onChange={e => onUpdate({...component.config, [key]: e.target.value})}
+                  style={{
+                    width: '40px',
+                    height: '38px',
+                    padding: '0',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <input 
+                  type="text" 
+                  value={value || ''} 
+                  onChange={e => onUpdate({...component.config, [key]: e.target.value})}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            ) : (
+              <input 
+                type="text" 
+                value={value || ''} 
+                onChange={e => onUpdate({...component.config, [key]: e.target.value})}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
