@@ -108,6 +108,8 @@ function MainPage() {
 function NavigationComponent({ config }) {
   const [pages, setPages] = useState([])
   const { setIsCartOpen, cartCount } = useCart()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const variant = config.variant || 'default'
 
   useEffect(() => {
@@ -122,36 +124,60 @@ function NavigationComponent({ config }) {
       }
     }
     fetchPages()
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   return (
     <nav style={{
       backgroundColor: config.backgroundColor || '#ffffff',
-      padding: config.padding || '30px 40px',
-      borderBottom: '1px solid transparent'
+      padding: config.padding || (isMobile ? '20px' : '30px 40px'),
+      borderBottom: '1px solid transparent',
+      position: 'relative'
     }}>
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
         display: 'flex',
-        flexDirection: variant === 'centered' ? 'column' : 'row',
-        justifyContent: variant === 'minimal' ? 'space-between' : (variant === 'centered' ? 'center' : 'space-between'),
+        flexDirection: (variant === 'centered' && !isMobile) ? 'column' : 'row',
+        justifyContent: (variant === 'minimal' || isMobile) ? 'space-between' : ((variant === 'centered') ? 'center' : 'space-between'),
         alignItems: 'center',
-        gap: variant === 'centered' ? '30px' : '0'
+        gap: (variant === 'centered' && !isMobile) ? '30px' : '0'
       }}>
+        {/* Mobile Hamburger (Left side for minimal, or if explicitly requested, but standard is right. 
+            However, for minimal variant, existing code had it next to logo. 
+            Let's stick to a standard mobile header: Logo Left, Controls Right) */}
+        
         <div style={{ 
-          fontSize: config.logoSize || '28px', 
+          fontSize: config.logoSize || (isMobile ? '24px' : '28px'), 
           fontWeight: '400',
           color: config.logoColor || '#000000',
           fontFamily: "'Playfair Display', serif",
-          letterSpacing: '0.05em'
+          letterSpacing: '0.05em',
+          display: 'flex',
+          alignItems: 'center'
         }}>
-          {variant === 'minimal' && <span style={{ marginRight: '15px', cursor: 'pointer' }}>☰</span>}
+          {/* For minimal desktop, keep the existing behavior if not mobile */}
+          {variant === 'minimal' && !isMobile && (
+            <span 
+              style={{ marginRight: '15px', cursor: 'pointer' }}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              ☰
+            </span>
+          )}
           {config.logoText || 'LUXURY BRAND'}
         </div>
         
+        {/* Desktop Links */}
         <div style={{ 
-          display: variant === 'minimal' ? 'none' : 'flex', 
+          display: (isMobile || (variant === 'minimal' && !isMenuOpen)) ? 'none' : 'flex', 
           gap: '40px',
           alignItems: 'center'
         }}>
@@ -188,7 +214,97 @@ function NavigationComponent({ config }) {
             Cart ({cartCount})
           </button>
         </div>
+
+        {/* Mobile Controls (Hamburger + Cart) */}
+        {isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer', 
+                fontSize: '13px', 
+                color: config.linkColor || '#111111',
+                padding: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}
+            >
+              Cart ({cartCount})
+            </button>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '24px',
+                color: config.linkColor || '#111111',
+                padding: 0,
+                lineHeight: 1
+              }}
+            >
+              {isMenuOpen ? '×' : '☰'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isMenuOpen && (isMobile || variant === 'minimal') && (
+        <div style={{
+          position: isMobile ? 'absolute' : 'relative',
+          top: isMobile ? '100%' : '20px',
+          left: 0,
+          right: 0,
+          backgroundColor: config.backgroundColor || '#ffffff',
+          padding: '20px',
+          borderTop: '1px solid #f0f0f0',
+          borderBottom: isMobile ? '1px solid #f0f0f0' : 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '20px',
+          zIndex: 100,
+          boxShadow: isMobile ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+        }}>
+          {pages.map(page => (
+            <a 
+              key={page.slug || 'home'}
+              href={page.is_home ? '/' : `/${page.slug}`}
+              style={{
+                textDecoration: 'none',
+                color: config.linkColor || '#111111',
+                fontSize: config.linkSize || '13px',
+                fontWeight: config.linkWeight || '400',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}
+            >
+              {page.title}
+            </a>
+          ))}
+          {!isMobile && variant === 'minimal' && (
+             <button 
+             onClick={() => setIsCartOpen(true)}
+             style={{ 
+               background: 'none', 
+               border: 'none', 
+               cursor: 'pointer', 
+               fontSize: config.linkSize || '13px', 
+               fontWeight: config.linkWeight || '400',
+               textTransform: 'uppercase',
+               letterSpacing: '0.1em',
+               color: config.linkColor || '#111111',
+               padding: 0
+             }}
+           >
+             Cart ({cartCount})
+           </button>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

@@ -204,11 +204,6 @@ function AdminDashboard() {
         emailPlaceholder: 'EMAIL ADDRESS',
         messagePlaceholder: 'YOUR MESSAGE'
       },
-      cart: {
-        backgroundColor: '#ffffff',
-        title: 'SHOPPING BAG',
-        emptyText: 'Your shopping bag is empty.'
-      },
       footer: {
         backgroundColor: '#000000',
         textColor: '#ffffff',
@@ -912,32 +907,6 @@ function CanvasComponent({ component, pages, index, onMove, onRemove, isSelected
                   {component.config.submitButtonText || 'Send'}
                 </button>
               </div>
-            </div>
-          </div>
-        )
-
-      case 'cart':
-        return (
-          <div style={{
-            backgroundColor: component.config.backgroundColor || '#f8fafc',
-            padding: '40px',
-            textAlign: 'center',
-            border: '1px solid #e2e8f0',
-            borderRadius: '6px',
-            maxWidth: variant === 'sidebar' ? '300px' : '100%',
-            marginLeft: variant === 'sidebar' ? 'auto' : '0'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#1f2937' }}>
-              {component.config.title || 'Shopping Cart'}
-            </h2>
-            <div style={{ 
-              padding: '40px', 
-              backgroundColor: 'white', 
-              borderRadius: '8px',
-              border: '1px dashed #cbd5e1',
-              color: '#64748b'
-            }}>
-              {component.config.emptyText || 'Your cart is empty'}
             </div>
           </div>
         )
