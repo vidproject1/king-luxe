@@ -180,6 +180,7 @@ function AdminDashboard() {
       },
       hero: {
         backgroundColor: '#f5f5f5',
+        backgroundImage: '',
         title: 'ELEGANCE REDEFINED',
         titleSize: '64px',
         titleColor: '#000000',
@@ -983,6 +984,8 @@ function CanvasComponent({ component, pages, index, onMove, onRemove, isSelected
 }
 
 function PropertyPanel({ component, onUpdate }) {
+  const [uploading, setUploading] = useState(false)
+
   if (!component) {
     return (
       <div style={{
@@ -999,7 +1002,42 @@ function PropertyPanel({ component, onUpdate }) {
 
   const isColor = (key, value) => {
     const keyLower = key.toLowerCase()
+    if (keyLower.includes('image')) return false
     return keyLower.includes('color') || keyLower.includes('background') || (typeof value === 'string' && value.startsWith('#'))
+  }
+
+  const isImage = (key) => {
+    const keyLower = key.toLowerCase()
+    return keyLower.includes('image')
+  }
+
+  const handleImageUpload = async (e, key) => {
+    try {
+      setUploading(true)
+      const file = e.target.files[0]
+      if (!file) return
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `hero_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+
+      onUpdate({ ...component.config, [key]: data.publicUrl })
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert('Error uploading image: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -1059,6 +1097,39 @@ function PropertyPanel({ component, onUpdate }) {
                     fontSize: '14px'
                   }}
                 />
+              </div>
+            ) : isImage(key) ? (
+              <div>
+                <input 
+                  type="text" 
+                  value={value || ''} 
+                  onChange={e => onUpdate({...component.config, [key]: e.target.value})}
+                  placeholder="Image URL"
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    marginBottom: '5px'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                   <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, key)}
+                    style={{
+                      fontSize: '12px'
+                    }}
+                  />
+                  {uploading && <span style={{ fontSize: '10px', color: '#666' }}>Uploading...</span>}
+                </div>
+                {value && (
+                  <div style={{ marginTop: '5px', height: '100px', backgroundColor: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <img src={value} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                )}
               </div>
             ) : (
               <input 

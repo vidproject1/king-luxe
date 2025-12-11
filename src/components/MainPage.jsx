@@ -314,26 +314,44 @@ function HeroComponent({ config }) {
   const isSplit = variant === 'split_left'
   const isFull = variant === 'full_height'
 
+  const sectionStyle = {
+    backgroundColor: config.backgroundColor || '#f5f5f5',
+    padding: config.padding || (isFull ? '0' : '120px 20px'),
+    textAlign: isSplit ? 'left' : (variant === 'minimal' ? 'left' : (config.textAlign || 'center')),
+    minHeight: isFull ? '100vh' : '70vh',
+    display: 'flex',
+    flexDirection: isSplit ? 'row' : 'column',
+    alignItems: isSplit ? 'center' : (isFull ? 'flex-start' : 'center'),
+    justifyContent: isFull ? 'flex-end' : 'center',
+    position: 'relative'
+  }
+
+  if (!isSplit && config.backgroundImage) {
+    sectionStyle.backgroundImage = `url(${config.backgroundImage})`
+    sectionStyle.backgroundSize = 'cover'
+    sectionStyle.backgroundPosition = 'center'
+  }
+
   return (
-    <section style={{
-      backgroundColor: config.backgroundColor || '#f5f5f5',
-      padding: config.padding || (isFull ? '0' : '120px 20px'),
-      textAlign: isSplit ? 'left' : (variant === 'minimal' ? 'left' : (config.textAlign || 'center')),
-      minHeight: isFull ? '100vh' : '70vh',
-      display: 'flex',
-      flexDirection: isSplit ? 'row' : 'column',
-      alignItems: isSplit ? 'center' : (isFull ? 'flex-start' : 'center'),
-      justifyContent: isFull ? 'flex-end' : 'center'
-    }}>
+    <section style={sectionStyle}>
       {isSplit && (
-        <div style={{ flex: 1, height: '70vh', backgroundColor: '#e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color: '#999' }}>Image Placeholder</span>
+        <div style={{ flex: 1, height: '70vh', backgroundColor: '#e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {config.backgroundImage ? (
+            <img src={config.backgroundImage} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ color: '#999' }}>Image Placeholder</span>
+          )}
         </div>
       )}
       <div style={{ 
         maxWidth: '900px', 
         margin: isFull ? '0 0 100px 100px' : (isSplit ? '0 0 0 80px' : '0 auto'),
-        flex: 1
+        flex: 1,
+        zIndex: 1,
+        // Add semi-transparent background if image is present to ensure text readability
+        backgroundColor: (!isSplit && config.backgroundImage) ? 'rgba(255,255,255,0.8)' : 'transparent',
+        padding: (!isSplit && config.backgroundImage) ? '40px' : '0',
+        borderRadius: '8px'
       }}>
         <h1 style={{
           fontSize: config.titleSize || '64px',
