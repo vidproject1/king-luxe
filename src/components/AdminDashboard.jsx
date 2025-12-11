@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { DndProvider, useDrag, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { supabase } from '../lib/supabase'
+import ProductManager from './ProductManager'
 
 const COMPONENT_VARIATIONS = {
   navigation: [
@@ -43,6 +44,7 @@ const COMPONENT_VARIATIONS = {
 }
 
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('pages') // 'pages' or 'products'
   const [components, setComponents] = useState([])
   const [pages, setPages] = useState([])
   const [currentPage, setCurrentPage] = useState(null)
@@ -365,12 +367,61 @@ function AdminDashboard() {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div style={{ 
-        display: 'flex', 
-        height: '100vh',
-        backgroundColor: '#f8fafc'
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f8fafc' }}>
+      {/* Top Navigation Bar */}
+      <div style={{
+        height: '60px',
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px',
+        gap: '20px'
       }}>
+        <div style={{ fontSize: '20px', fontWeight: 'bold', marginRight: '20px' }}>Admin Dashboard</div>
+        <button
+          onClick={() => setActiveTab('pages')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: activeTab === 'pages' ? '#000' : 'transparent',
+            color: activeTab === 'pages' ? '#fff' : '#666',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+        >
+          Page Builder
+        </button>
+        <button
+          onClick={() => setActiveTab('products')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: activeTab === 'products' ? '#000' : 'transparent',
+            color: activeTab === 'products' ? '#fff' : '#666',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+        >
+          Product Inventory
+        </button>
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {activeTab === 'products' ? (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <ProductManager />
+          </div>
+        ) : (
+          <DndProvider backend={HTML5Backend}>
+            <div style={{ 
+              display: 'flex', 
+              height: '100%',
+              backgroundColor: '#f8fafc'
+            }}>
         {/* Sidebar with component tools */}
         <div style={{
           width: '300px',
@@ -533,7 +584,10 @@ function AdminDashboard() {
         />
       </div>
     </DndProvider>
-  )
+    )}
+  </div>
+</div>
+)
 }
 
 // Component Tool (Draggable item)

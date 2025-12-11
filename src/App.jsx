@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import AdminDashboard from './components/AdminDashboard'
 import MainPage from './components/MainPage'
+import ProductPage from './components/ProductPage'
 
 function NavigationButton() {
   const navigate = useNavigate()
@@ -35,6 +36,7 @@ function App() {
       <div className="app">
         <Routes>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/:slug" element={<MainPage />} />
           <Route path="/" element={<MainPage />} />
         </Routes>

@@ -242,7 +242,29 @@ function HeroComponent({ config }) {
 }
 
 function ProductGridComponent({ config }) {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   const variant = config.variant || 'default'
+  
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(config.limit || 8)
+        
+        if (error) throw error
+        setProducts(data || [])
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
   
   let gridStyle = {
     display: 'grid',
@@ -281,26 +303,40 @@ function ProductGridComponent({ config }) {
         </h2>
         
         <div style={gridStyle}>
-          {/* Placeholder for products */}
-          {[1, 2, 3, 4].map(item => (
-            <div key={item} style={{
-              backgroundColor: 'transparent',
-              textAlign: 'center',
-              cursor: 'pointer',
-              minWidth: variant === 'carousel' ? '300px' : 'auto',
-              gridRow: variant === 'masonry' && item % 2 === 0 ? 'span 2' : 'span 1'
-            }}>
+          {products.map(product => (
+            <a 
+              key={product.id} 
+              href={`/product/${product.id}`}
+              style={{
+                textDecoration: 'none',
+                backgroundColor: 'transparent',
+                textAlign: 'center',
+                cursor: 'pointer',
+                minWidth: variant === 'carousel' ? '300px' : 'auto',
+                gridRow: variant === 'masonry' && product.id % 2 === 0 ? 'span 2' : 'span 1',
+                display: 'block'
+              }}
+            >
               <div style={{
-                height: variant === 'masonry' && item % 2 === 0 ? '600px' : '400px',
+                height: variant === 'masonry' && product.id % 2 === 0 ? '600px' : '400px',
                 backgroundColor: '#f5f5f5',
                 marginBottom: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#999',
-                transition: 'opacity 0.3s ease'
+                transition: 'opacity 0.3s ease',
+                overflow: 'hidden'
               }}>
-                Product Image
+                {product.images && product.images.length > 0 ? (
+                  <img 
+                    src={product.images[0]} 
+                    alt={product.title} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <span>No Image</span>
+                )}
               </div>
               <h3 style={{ 
                 marginBottom: '8px', 
@@ -310,17 +346,23 @@ function ProductGridComponent({ config }) {
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Product Name {item}
+                {product.title}
               </h3>
               <p style={{ 
                 color: '#444444', 
                 fontSize: '14px',
                 fontWeight: '300'
               }}>
-                $1,200.00
+                ${product.price.toFixed(2)}
               </p>
-            </div>
+            </a>
           ))}
+          
+          {products.length === 0 && !loading && (
+             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#999' }}>
+               No products available.
+             </div>
+          )}
         </div>
       </div>
     </section>
