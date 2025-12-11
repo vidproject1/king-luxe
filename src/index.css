@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: #111111;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+button {
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#root {
+  height: 100vh;
+}
+
+.drag-handle {
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.canvas-area {
+  min-height: 500px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+.canvas-area.drag-over {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.component-tool {
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: grab;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.component-tool:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.component-tool:active {
+  cursor: grabbing;
+}
+
+.main-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
