@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
+import { CartProvider } from './context/CartContext'
 import AdminDashboard from './components/AdminDashboard'
 import MainPage from './components/MainPage'
 import ProductPage from './components/ProductPage'
+import CartDrawer from './components/CartDrawer'
 
 function NavigationButton() {
   const navigate = useNavigate()
@@ -54,17 +56,20 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/product/:id" element={<ProductPage />} />
-          <Route path="/:slug" element={<MainPage />} />
-          <Route path="/" element={<MainPage />} />
-        </Routes>
-        <NavigationButton />
-      </div>
-    </Router>
+    <CartProvider>
+      <Router>
+        <div className="app">
+          <Routes>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/product/:id" element={<ProductPage />} />
+            <Route path="/:slug" element={<MainPage />} />
+            <Route path="/" element={<MainPage />} />
+          </Routes>
+          <CartDrawer />
+          <NavigationButton />
+        </div>
+      </Router>
+    </CartProvider>
   )
 }
 

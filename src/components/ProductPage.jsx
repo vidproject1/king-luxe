@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useCart } from '../context/CartContext'
 
 function ProductPage() {
   const { id } = useParams()
+  const { addToCart, setIsCartOpen, cartCount } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -35,17 +37,38 @@ function ProductPage() {
   if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>
   if (!product) return <div style={{ padding: '100px', textAlign: 'center' }}>Product not found</div>
 
+  const handleAddToCart = () => {
+    if (product.colors && product.colors.length > 0 && !selectedColor) {
+      alert('Please select a color')
+      return
+    }
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      alert('Please select a size')
+      return
+    }
+    
+    addToCart(product, 1, selectedColor, selectedSize)
+  }
+
   const themeColor = product.theme_color || '#000000'
 
   return (
     <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
        {/* Simple Header */}
        <div style={{ padding: '20px 40px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-         <Link to="/" style={{ textDecoration: 'none', fontSize: '24px', fontFamily: "'Playfair Display', serif", color: '#000' }}>
-           LUXURY BRAND
-         </Link>
-         <Link to="/" style={{ textDecoration: 'none', color: '#666', fontSize: '14px' }}>Back to Shop</Link>
-       </div>
+        <Link to="/" style={{ textDecoration: 'none', fontSize: '24px', fontFamily: "'Playfair Display', serif", color: '#000' }}>
+          LUXURY BRAND
+        </Link>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <Link to="/" style={{ textDecoration: 'none', color: '#666', fontSize: '14px' }}>Back to Shop</Link>
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#000' }}
+          >
+            Cart ({cartCount})
+          </button>
+        </div>
+      </div>
 
        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 20px', display: 'flex', flexWrap: 'wrap', gap: '60px' }}>
          {/* Image Gallery */}
@@ -141,7 +164,9 @@ function ProductPage() {
              </div>
            )}
 
-           <button style={{
+           <button 
+             onClick={handleAddToCart}
+             style={{
              width: '100%',
              padding: '20px',
              backgroundColor: themeColor,

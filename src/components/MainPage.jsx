@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useCart } from '../context/CartContext'
 
 function MainPage() {
   const { slug } = useParams()
@@ -108,6 +109,7 @@ function MainPage() {
 // Component implementations
 function NavigationComponent({ config }) {
   const [pages, setPages] = useState([])
+  const { setIsCartOpen, cartCount } = useCart()
   const variant = config.variant || 'default'
 
   useEffect(() => {
@@ -152,7 +154,8 @@ function NavigationComponent({ config }) {
         
         <div style={{ 
           display: variant === 'minimal' ? 'none' : 'flex', 
-          gap: '40px' 
+          gap: '40px',
+          alignItems: 'center'
         }}>
           {pages.map(page => (
             <a 
@@ -170,6 +173,22 @@ function NavigationComponent({ config }) {
               {page.title}
             </a>
           ))}
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontSize: config.linkSize || '13px', 
+              fontWeight: config.linkWeight || '400',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: config.linkColor || '#111111',
+              padding: 0
+            }}
+          >
+            Cart ({cartCount})
+          </button>
         </div>
       </div>
     </nav>
