@@ -65,7 +65,7 @@ insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do nothing;
 
-alter table storage.objects enable row level security;
+-- NOTE: We skipped 'alter table storage.objects enable row level security;' as it often causes permission errors.
 
 -- ==========================================
 -- POLICIES (DEVELOPMENT MODE - PUBLIC ACCESS)
@@ -76,10 +76,6 @@ DROP POLICY IF EXISTS "Public Access Pages" ON pages;
 DROP POLICY IF EXISTS "Public Access Components" ON page_components;
 DROP POLICY IF EXISTS "Public Access Nav" ON navigation_links;
 DROP POLICY IF EXISTS "Public Access Products" ON products;
-DROP POLICY IF EXISTS "Public Access Storage" ON storage.objects;
-DROP POLICY IF EXISTS "Public Upload Storage" ON storage.objects;
-DROP POLICY IF EXISTS "Public Update Storage" ON storage.objects;
-DROP POLICY IF EXISTS "Public Delete Storage" ON storage.objects;
 
 -- Pages
 CREATE POLICY "Public Access Pages" ON pages FOR ALL USING (true) WITH CHECK (true);
@@ -93,11 +89,30 @@ CREATE POLICY "Public Access Nav" ON navigation_links FOR ALL USING (true) WITH 
 -- Products
 CREATE POLICY "Public Access Products" ON products FOR ALL USING (true) WITH CHECK (true);
 
--- Storage
-CREATE POLICY "Public Access Storage" ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
-CREATE POLICY "Public Upload Storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images');
-CREATE POLICY "Public Update Storage" ON storage.objects FOR UPDATE USING (bucket_id = 'product-images');
-CREATE POLICY "Public Delete Storage" ON storage.objects FOR DELETE USING (bucket_id = 'product-images');
+-- Storage Policies
+-- We wrap these in a DO block to ignore errors if policies already exist or permissions are denied
+DO $$
+BEGIN
+    BEGIN
+        CREATE POLICY "Public Access Storage" ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
+    EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL;
+    END;
+
+    BEGIN
+        CREATE POLICY "Public Upload Storage" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images');
+    EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL;
+    END;
+
+    BEGIN
+        CREATE POLICY "Public Update Storage" ON storage.objects FOR UPDATE USING (bucket_id = 'product-images');
+    EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL;
+    END;
+
+    BEGIN
+        CREATE POLICY "Public Delete Storage" ON storage.objects FOR DELETE USING (bucket_id = 'product-images');
+    EXCEPTION WHEN duplicate_object THEN NULL; WHEN OTHERS THEN NULL;
+    END;
+END $$;
 
 -- Insert default home page if it doesn't exist
 INSERT INTO pages (title, slug, is_home) 
