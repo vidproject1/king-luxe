@@ -190,7 +190,7 @@ function ProductManager() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Price ($)</label>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Price (R)</label>
                   <input 
                     name="price" 
                     type="number" 
@@ -323,7 +323,7 @@ function ProductManager() {
             </div>
             <div style={{ padding: '15px' }}>
               <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold' }}>{product.title}</h3>
-              <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>${product.price}</p>
+              <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>R {product.price}</p>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button 
                   onClick={() => handleEdit(product)}

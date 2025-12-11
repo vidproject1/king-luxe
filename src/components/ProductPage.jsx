@@ -83,7 +83,7 @@ function ProductPage() {
          {/* Product Details */}
          <div style={{ flex: '1 1 400px' }}>
            <h1 style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", marginBottom: '20px', color: themeColor }}>{product.title}</h1>
-           <p style={{ fontSize: '20px', marginBottom: '30px', fontWeight: '300' }}>${product.price.toFixed(2)}</p>
+           <p style={{ fontSize: '20px', marginBottom: '30px', fontWeight: '300' }}>R {product.price.toFixed(2)}</p>
            
            <div style={{ marginBottom: '40px', lineHeight: '1.8', color: '#666' }}>
              {product.description}

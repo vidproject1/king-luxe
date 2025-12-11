@@ -353,7 +353,7 @@ function ProductGridComponent({ config }) {
                 fontSize: '14px',
                 fontWeight: '300'
               }}>
-                ${product.price.toFixed(2)}
+                R {product.price.toFixed(2)}
               </p>
             </a>
           ))}
