@@ -473,10 +473,101 @@ function ProductGridComponent({ config }) {
 
   if (variant === 'masonry') {
     gridStyle = {
-      columnCount: isMobile ? 1 : 3,
-      columnGap: '40px',
       display: 'block'
     }
+  }
+
+  const renderProductCard = (product, index) => (
+    <a 
+      key={product.id} 
+      href={`/product/${product.id}`}
+      style={{
+        textDecoration: 'none',
+        backgroundColor: 'transparent',
+        textAlign: 'center',
+        cursor: 'pointer',
+        minWidth: variant === 'carousel' ? '300px' : 'auto',
+        display: variant === 'masonry' ? 'block' : 'block',
+        width: '100%',
+        marginBottom: variant === 'masonry' ? '0' : '0',
+        breakInside: 'avoid'
+      }}
+    >
+      <div style={{
+        height: variant === 'masonry' ? (index % 2 === 0 ? '550px' : '380px') : '400px',
+        backgroundColor: '#f5f5f5',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#999',
+        transition: 'opacity 0.3s ease',
+        overflow: 'hidden'
+      }}>
+        {product.images && product.images.length > 0 ? (
+          <img 
+            src={product.images[0]} 
+            alt={product.title} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
+        ) : (
+          <span>No Image</span>
+        )}
+      </div>
+      <h3 style={{ 
+        marginBottom: '8px', 
+        color: '#000000',
+        fontSize: '16px',
+        fontFamily: "'Lato', sans-serif",
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
+      }}>
+        {product.title}
+      </h3>
+      <p style={{ 
+        color: '#444444', 
+        fontSize: '14px',
+        fontWeight: '300'
+      }}>
+        R {product.price.toFixed(2)}
+      </p>
+    </a>
+  )
+
+  const renderContent = () => {
+    if (variant === 'masonry' && !isMobile) {
+      const columns = [[], [], []];
+      products.forEach((product, index) => {
+        columns[index % 3].push({ product, index });
+      });
+
+      return (
+        <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+          {columns.map((col, colIndex) => (
+            <div key={colIndex} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '40px' }}>
+              {col.map(({ product, index }) => renderProductCard(product, index))}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    const mobileStyle = variant === 'masonry' && isMobile ? {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '40px'
+    } : gridStyle;
+
+    return (
+      <div style={mobileStyle}>
+        {products.map((product, index) => renderProductCard(product, index))}
+        {products.length === 0 && !loading && (
+             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#999' }}>
+               No products available.
+             </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -496,70 +587,7 @@ function ProductGridComponent({ config }) {
           {config.title || 'LATEST ARRIVALS'}
         </h2>
         
-        <div style={gridStyle}>
-          {products.map((product, index) => (
-            <a 
-              key={product.id} 
-              href={`/product/${product.id}`}
-              style={{
-                textDecoration: 'none',
-                backgroundColor: 'transparent',
-                textAlign: 'center',
-                cursor: 'pointer',
-                minWidth: variant === 'carousel' ? '300px' : 'auto',
-                display: variant === 'masonry' ? 'inline-block' : 'block',
-                width: '100%',
-                marginBottom: variant === 'masonry' ? '40px' : '0',
-                breakInside: 'avoid'
-              }}
-            >
-              <div style={{
-                height: variant === 'masonry' ? (index % 2 === 0 ? '550px' : '380px') : '400px',
-                backgroundColor: '#f5f5f5',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999',
-                transition: 'opacity 0.3s ease',
-                overflow: 'hidden'
-              }}>
-                {product.images && product.images.length > 0 ? (
-                  <img 
-                    src={product.images[0]} 
-                    alt={product.title} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  />
-                ) : (
-                  <span>No Image</span>
-                )}
-              </div>
-              <h3 style={{ 
-                marginBottom: '8px', 
-                color: '#000000',
-                fontSize: '16px',
-                fontFamily: "'Lato', sans-serif",
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                {product.title}
-              </h3>
-              <p style={{ 
-                color: '#444444', 
-                fontSize: '14px',
-                fontWeight: '300'
-              }}>
-                R {product.price.toFixed(2)}
-              </p>
-            </a>
-          ))}
-          
-          {products.length === 0 && !loading && (
-             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#999' }}>
-               No products available.
-             </div>
-          )}
-        </div>
+        {renderContent()}
       </div>
     </section>
   )
