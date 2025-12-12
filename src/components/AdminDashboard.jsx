@@ -189,7 +189,9 @@ function AdminDashboard() {
         subtitleColor: '#444444',
         ctaText: 'DISCOVER MORE',
         ctaBackgroundColor: '#000000',
-        ctaTextColor: '#ffffff'
+        ctaTextColor: '#ffffff',
+        overlayColor: '#ffffff',
+        overlayOpacity: '80'
       },
       product_grid: {
         backgroundColor: '#ffffff',
@@ -1011,6 +1013,11 @@ function PropertyPanel({ component, onUpdate }) {
     return keyLower.includes('image')
   }
 
+  const isRange = (key) => {
+    const keyLower = key.toLowerCase()
+    return keyLower.includes('opacity')
+  }
+
   const handleImageUpload = async (e, key) => {
     try {
       setUploading(true)
@@ -1097,6 +1104,18 @@ function PropertyPanel({ component, onUpdate }) {
                     fontSize: '14px'
                   }}
                 />
+              </div>
+            ) : isRange(key) ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={value || 80} 
+                  onChange={e => onUpdate({...component.config, [key]: e.target.value})}
+                  style={{ flex: 1, cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '14px', width: '35px', textAlign: 'right' }}>{value}%</span>
               </div>
             ) : isImage(key) ? (
               <div>

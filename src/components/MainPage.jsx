@@ -314,6 +314,23 @@ function HeroComponent({ config }) {
   const isSplit = variant === 'split_left'
   const isFull = variant === 'full_height'
 
+  const hexToRgba = (hex, opacity) => {
+    let c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+(opacity/100)+')';
+    }
+    return hex;
+  }
+
+  const overlayColor = config.overlayColor || '#ffffff'
+  const overlayOpacity = config.overlayOpacity || '80'
+  const overlayBg = hexToRgba(overlayColor, overlayOpacity)
+
   const sectionStyle = {
     backgroundColor: config.backgroundColor || '#f5f5f5',
     padding: config.padding || (isFull ? '0' : '120px 20px'),
@@ -348,8 +365,12 @@ function HeroComponent({ config }) {
         margin: isFull ? '0 0 100px 100px' : (isSplit ? '0 0 0 80px' : '0 auto'),
         flex: 1,
         zIndex: 1,
-        // Add semi-transparent background if image is present to ensure text readability
-        backgroundColor: (!isSplit && config.backgroundImage) ? 'rgba(255,255,255,0.8)' : 'transparent',
+        // Use dynamic overlay background if image is present, or transparent if not (unless user wants a box always)
+        // Usually if no background image, the text sits on section background.
+        // If background image, we need contrast.
+        // Let's respect overlayColor if image is present OR if user explicitly wants a box.
+        // For now, keep existing logic: only if image is present.
+        backgroundColor: (!isSplit && config.backgroundImage) ? overlayBg : 'transparent',
         padding: (!isSplit && config.backgroundImage) ? '40px' : '0',
         borderRadius: '8px'
       }}>
@@ -395,6 +416,7 @@ function HeroComponent({ config }) {
 function ProductGridComponent({ config }) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const variant = config.variant || 'default'
   
   useEffect(() => {
@@ -415,6 +437,13 @@ function ProductGridComponent({ config }) {
       }
     }
     fetchProducts()
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
   
   let gridStyle = {
@@ -436,6 +465,14 @@ function ProductGridComponent({ config }) {
     }
   }
 
+  if (variant === 'masonry') {
+    gridStyle = {
+      columnCount: isMobile ? 1 : 3,
+      columnGap: '40px',
+      display: 'block'
+    }
+  }
+
   return (
     <section style={{ 
       padding: config.padding || '100px 40px',
@@ -454,7 +491,7 @@ function ProductGridComponent({ config }) {
         </h2>
         
         <div style={gridStyle}>
-          {products.map(product => (
+          {products.map((product, index) => (
             <a 
               key={product.id} 
               href={`/product/${product.id}`}
@@ -464,12 +501,14 @@ function ProductGridComponent({ config }) {
                 textAlign: 'center',
                 cursor: 'pointer',
                 minWidth: variant === 'carousel' ? '300px' : 'auto',
-                gridRow: variant === 'masonry' && product.id % 2 === 0 ? 'span 2' : 'span 1',
-                display: 'block'
+                display: variant === 'masonry' ? 'inline-block' : 'block',
+                width: '100%',
+                marginBottom: variant === 'masonry' ? '40px' : '0',
+                breakInside: 'avoid'
               }}
             >
               <div style={{
-                height: variant === 'masonry' && product.id % 2 === 0 ? '600px' : '400px',
+                height: variant === 'masonry' ? (index % 2 === 0 ? '550px' : '380px') : '400px',
                 backgroundColor: '#f5f5f5',
                 marginBottom: '20px',
                 display: 'flex',
