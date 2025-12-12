@@ -11,10 +11,40 @@ function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
+  const [brandName, setBrandName] = useState('LUXURY BRAND')
 
   useEffect(() => {
     fetchProduct()
+    fetchBrandName()
   }, [id])
+
+  const fetchBrandName = async () => {
+    try {
+      // 1. Get the home page
+      const { data: homePage } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('is_home', true)
+        .single()
+
+      if (!homePage) return
+
+      // 2. Get the navigation component for the home page
+      const { data: navComponent } = await supabase
+        .from('page_components')
+        .select('config')
+        .eq('page_id', homePage.id)
+        .eq('type', 'navigation')
+        .limit(1)
+        .single()
+
+      if (navComponent && navComponent.config && navComponent.config.logoText) {
+        setBrandName(navComponent.config.logoText)
+      }
+    } catch (error) {
+      console.error('Error fetching brand name:', error)
+    }
+  }
 
   const fetchProduct = async () => {
     try {
@@ -57,7 +87,7 @@ function ProductPage() {
        {/* Simple Header */}
        <div style={{ padding: '20px 40px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/" style={{ textDecoration: 'none', fontSize: '24px', fontFamily: "'Playfair Display', serif", color: '#000' }}>
-          LUXURY BRAND
+          {brandName}
         </Link>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <Link to="/" style={{ textDecoration: 'none', color: '#666', fontSize: '14px' }}>Back to Shop</Link>
