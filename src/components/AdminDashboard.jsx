@@ -197,7 +197,8 @@ function AdminDashboard() {
         backgroundColor: '#ffffff',
         title: 'LATEST ARRIVALS',
         titleSize: '32px',
-        titleColor: '#000000'
+        titleColor: '#000000',
+        limit: ''
       },
       contact_form: {
         backgroundColor: '#ffffff',

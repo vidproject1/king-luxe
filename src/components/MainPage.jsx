@@ -422,11 +422,17 @@ function ProductGridComponent({ config }) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('products')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(config.limit || 8)
+        
+        // Only apply limit if it's explicitly set and greater than 0
+        if (config.limit && parseInt(config.limit) > 0) {
+          query = query.limit(parseInt(config.limit))
+        }
+        
+        const { data, error } = await query
         
         if (error) throw error
         setProducts(data || [])
